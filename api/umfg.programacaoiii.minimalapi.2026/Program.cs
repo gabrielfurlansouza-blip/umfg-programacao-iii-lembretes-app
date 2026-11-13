@@ -32,6 +32,13 @@ public class Program
 
         var app = builder.Build();
 
+        using (var scope = app.Services.CreateScope())
+        {
+            var contexto = scope.ServiceProvider.GetRequiredService<MySqlContexto>();
+            if (contexto.Database.GetPendingMigrations().Any())
+                contexto.Database.Migrate();
+        }
+
         app.MapPost("/lembretes", async (Lembrete lembrete, MySqlContexto contexto) =>
         {
             await contexto.Lembrete.AddAsync(lembrete);

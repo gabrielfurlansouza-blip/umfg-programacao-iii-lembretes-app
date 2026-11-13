@@ -10,8 +10,6 @@ public sealed class MySqlContexto : DbContext
 	public MySqlContexto(DbContextOptions<MySqlContexto> options)
 		: base(options)
 	{
-		if (Database.GetPendingMigrations().Any())
-			Database.Migrate();
 	}
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
