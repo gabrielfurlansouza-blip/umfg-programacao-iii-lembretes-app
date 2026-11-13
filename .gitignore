@@ -1,0 +1,27 @@
+# ---- .NET / Visual Studio ----
+bin/
+obj/
+out/
+[Dd]ebug/
+[Rr]elease/
+.vs/
+*.user
+*.suo
+*.userprefs
+project.lock.json
+# ASP.NET
+appsettings.*.local.json
+
+# ---- Node / front-end (caso venha a usar) ----
+node_modules/
+dist/
+npm-debug.log*
+
+# ---- Sistema / editores ----
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# ---- Arquivos empacotados ----
+*.zip

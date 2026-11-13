@@ -1,0 +1,65 @@
+### =====================================================================
+### Testes das requisições HTTP da API de lembretes (Etapa 2)
+### Visual Studio 2022 (17.12+) ou extensão "REST Client" do VS Code.
+### Execute a API com o perfil "https" antes de enviar as requisições.
+### =====================================================================
+
+@host = https://localhost:7063
+
+### 1) POST — cadastrar um lembrete
+# @name criar
+POST {{host}}/lembretes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "descricao": "Entregar a atividade de Programação III no AVA"
+}
+
+### O id retornado pelo POST é reaproveitado nas próximas requisições
+@id = {{criar.response.body.$.id}}
+
+### 2) GET — consultar todos os lembretes ativos
+GET {{host}}/lembretes
+Accept: application/json
+
+### 3) GET por ID — buscar um lembrete específico
+GET {{host}}/lembretes/{{id}}
+Accept: application/json
+
+### 4) PUT — atualizar a descrição
+PUT {{host}}/lembretes/{{id}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "descricao": "Entregar a atividade de Programação III no AVA (com link do GitHub)"
+}
+
+### 5) GET filtro — paginação + ordenação (sem filtros de data)
+GET {{host}}/lembretes/filtro?NumeroPagina=1&TamanhoPagina=10&Ordem=Descricao&Direcao=ASC&Descricao=&DataCadastroInicial=0001-01-01&DataCadastroFinal=9999-12-30&DataAtualizacaoInicial=0001-01-01&DataAtualizacaoFinal=9999-12-30
+Accept: application/json
+
+### 6) GET filtro — descrição + período de cadastro e de atualização
+GET {{host}}/lembretes/filtro?NumeroPagina=1&TamanhoPagina=5&Ordem=DataAtualizacao&Direcao=DESC&Descricao=atividade&DataCadastroInicial=2026-11-01&DataCadastroFinal=2026-11-30&DataAtualizacaoInicial=2026-11-01&DataAtualizacaoFinal=2026-11-30
+Accept: application/json
+
+### 7) GET filtro — erro esperado (400): página inválida
+GET {{host}}/lembretes/filtro?NumeroPagina=0&TamanhoPagina=10
+Accept: application/json
+
+### 8) GET imprimir — relatório PDF com os mesmos parâmetros do filtro
+GET {{host}}/lembretes/imprimir?NumeroPagina=1&TamanhoPagina=20&Ordem=DataCadastro&Direcao=DESC&Descricao=&DataCadastroInicial=0001-01-01&DataCadastroFinal=9999-12-30&DataAtualizacaoInicial=0001-01-01&DataAtualizacaoFinal=9999-12-30
+
+### 9) OPTIONS — simula o preflight de CORS que o navegador envia antes do PUT
+OPTIONS {{host}}/lembretes/{{id}}
+Origin: http://127.0.0.1:5500
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: content-type
+
+### 10) DELETE — excluir (exclusão lógica: IsAtivo = false)
+DELETE {{host}}/lembretes/{{id}}
+
+### 11) GET por ID após excluir — esperado 404
+GET {{host}}/lembretes/{{id}}
+Accept: application/json

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-tema="caderno">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="Cadastro, consulta, edição e exclusão de lembretes consumindo a Minimal API de Programação III.">
+        <meta name="theme-color" content="#1F3FA6">
+
+        <title>Lembretes</title>
+
+        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='3' width='24' height='26' rx='3' fill='%231F3FA6'/%3E%3Cpath d='M9 11h14M9 16h14M9 21h9' stroke='%23FFE45E' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+        <link rel="stylesheet" href="css/style.css">
+
+        <!-- aplica o tema salvo antes de desenhar a página (evita "piscar" ao trocar de tema) -->
+        <script>
+            try {
+                var temaSalvo = localStorage.getItem("lembretes:tema");
+                var prefereEscuro = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                document.documentElement.dataset.tema = temaSalvo || (prefereEscuro ? "lousa" : "caderno");
+            } catch (e) {
+                document.documentElement.dataset.tema = "caderno";
+            }
+        </script>
+    </head>
+
+    <body>
+        <!-- ÍCONES (sprite SVG reutilizado com <use>) -->
+        <svg class="sprite" aria-hidden="true" focusable="false">
+            <symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+            <symbol id="i-baixar" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+            <symbol id="i-lapis" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></symbol>
+            <symbol id="i-lixeira" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+            <symbol id="i-esquerda" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+            <symbol id="i-direita" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+            <symbol id="i-lousa" viewBox="0 0 24 24"><path d="M3 4h18v12H3zM8 20l2-4M16 20l-2-4M7 8.5h5M7 11.5h8"/></symbol>
+            <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+            <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+            <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19zM12 10v4.5M12 17.2v.3"/></symbol>
+            <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.3"/></symbol>
+            <symbol id="i-funil" viewBox="0 0 24 24"><path d="M4 5h16l-6 7.5V18l-4 2v-7.5z"/></symbol>
+            <symbol id="i-desconectado" viewBox="0 0 24 24"><path d="M9 3v4M15 3v4M7 7h10v4a5 5 0 0 1-10 0zM12 16v5M3 3l18 18"/></symbol>
+            <symbol id="i-caderno" viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM9 8h6M9 12h6M9 16h3M4 7h3M4 12h3M4 17h3"/></symbol>
+            <symbol id="i-recarregar" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></symbol>
+        </svg>
+
+        <a class="pular-link" href="#lista">Pular para a lista de lembretes</a>
+
+        <!-- CABEÇALHO -->
+        <header class="topo">
+            <div class="topo__titulo">
+                <h1>
+                    Lembretes
+                    <svg class="rabisco" viewBox="0 0 300 22" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                        <path pathLength="1" d="M3 13 C 45 4, 78 20, 120 11 S 190 3, 228 12 S 280 18, 297 8"/>
+                    </svg>
+                </h1>
+                <p class="topo__subtitulo">Anote, encontre e organize o que não pode esquecer.</p>
+                <p class="topo__hoje" id="hoje"></p>
+            </div>
+
+            <div class="topo__acoes">
+                <button id="btnTema" type="button" class="btn btn--claro-fantasma" title="Alternar entre caderno (claro) e lousa (escuro)">
+                    <svg class="icone" aria-hidden="true"><use href="#i-lousa"/></svg>
+                    <span>Modo lousa</span>
+                </button>
+                <button id="btnImprimir" type="button" class="btn btn--claro-contorno">
+                    <svg class="icone" aria-hidden="true"><use href="#i-baixar"/></svg>
+                    <span>Baixar PDF</span>
+                </button>
+                <button id="btnNovo" type="button" class="btn btn--destaque">
+                    <svg class="icone" aria-hidden="true"><use href="#i-mais"/></svg>
+                    <span>Novo lembrete</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- FOLHA DO CADERNO -->
+        <main class="folha" id="conteudo">
+            <div class="folha__furos" aria-hidden="true"></div>
+            <div class="barra-progresso" id="barraProgresso" hidden></div>
+
+            <!-- FILTROS -->
+            <details class="filtros" id="detalhesFiltros" open>
+                <summary class="filtros__resumo">
+                    <svg class="icone" aria-hidden="true"><use href="#i-funil"/></svg>
+                    <h2>Filtrar lembretes</h2>
+                    <span class="filtros__alternar" aria-hidden="true"></span>
+                </summary>
+
+                <form id="formFiltros" class="filtros__form" novalidate>
+                    <div class="campo campo--descricao">
+                        <label for="filtroDescricao">Descrição contém</label>
+                        <input type="search" id="filtroDescricao" placeholder="Ex.: prova, boleto, reunião" maxlength="500" autocomplete="off">
+                    </div>
+
+                    <fieldset class="campo periodo">
+                        <legend>Data de cadastro</legend>
+                        <div class="periodo__datas">
+                            <label class="sr-only" for="filtroCadastroInicial">Cadastro a partir de</label>
+                            <input type="date" id="filtroCadastroInicial" min="1900-01-01" max="9999-12-30" aria-describedby="erroCadastro">
+                            <span class="periodo__ate" aria-hidden="true">até</span>
+                            <label class="sr-only" for="filtroCadastroFinal">Cadastro até</label>
+                            <input type="date" id="filtroCadastroFinal" min="1900-01-01" max="9999-12-30" aria-describedby="erroCadastro">
+                        </div>
+                        <p class="campo__erro" id="erroCadastro" hidden></p>
+                    </fieldset>
+
+                    <fieldset class="campo periodo">
+                        <legend>Data de atualização</legend>
+                        <div class="periodo__datas">
+                            <label class="sr-only" for="filtroAtualizacaoInicial">Atualização a partir de</label>
+                            <input type="date" id="filtroAtualizacaoInicial" min="1900-01-01" max="9999-12-30" aria-describedby="erroAtualizacao">
+                            <span class="periodo__ate" aria-hidden="true">até</span>
+                            <label class="sr-only" for="filtroAtualizacaoFinal">Atualização até</label>
+                            <input type="date" id="filtroAtualizacaoFinal" min="1900-01-01" max="9999-12-30" aria-describedby="erroAtualizacao">
+                        </div>
+                        <p class="campo__erro" id="erroAtualizacao" hidden></p>
+                    </fieldset>
+
+                    <div class="filtros__acoes">
+                        <button type="button" id="btnLimparFiltros" class="btn btn--texto">Limpar filtros</button>
+                        <button type="submit" id="btnFiltrar" class="btn btn--primario">Filtrar</button>
+                    </div>
+                </form>
+            </details>
+
+            <!-- LISTAGEM -->
+            <section class="lista" id="lista" aria-labelledby="tituloLista" tabindex="-1">
+                <div class="lista__cabecalho">
+                    <div>
+                        <h2 id="tituloLista">Seus lembretes</h2>
+                        <p id="totalRegistros" class="lista__total" aria-live="polite">Carregando lembretes…</p>
+                    </div>
+
+                    <div id="filtrosAtivos" class="chips" aria-label="Filtros aplicados"></div>
+                </div>
+
+                <div class="tabela-container">
+                    <table class="tabela" id="tabela">
+                        <caption class="sr-only">Lembretes. Use os botões do cabeçalho para ordenar.</caption>
+                        <thead id="cabecalhoTabela">
+                            <tr>
+                                <th scope="col" class="col-descricao" data-campo="Descricao" aria-sort="none">
+                                    <button type="button" class="ordenar" data-campo="Descricao">
+                                        Descrição
+                                        <svg class="ordenar__seta" viewBox="0 0 12 16" aria-hidden="true"><path class="seta-cima" d="M6 1l4.5 5.5h-9z"/><path class="seta-baixo" d="M6 15l-4.5-5.5h9z"/></svg>
+                                    </button>
+                                </th>
+                                <th scope="col" class="col-data" data-campo="DataCadastro" aria-sort="descending">
+                                    <button type="button" class="ordenar" data-campo="DataCadastro">
+                                        Cadastro
+                                        <svg class="ordenar__seta" viewBox="0 0 12 16" aria-hidden="true"><path class="seta-cima" d="M6 1l4.5 5.5h-9z"/><path class="seta-baixo" d="M6 15l-4.5-5.5h9z"/></svg>
+                                    </button>
+                                </th>
+                                <th scope="col" class="col-data" data-campo="DataAtualizacao" aria-sort="none">
+                                    <button type="button" class="ordenar" data-campo="DataAtualizacao">
+                                        Atualização
+                                        <svg class="ordenar__seta" viewBox="0 0 12 16" aria-hidden="true"><path class="seta-cima" d="M6 1l4.5 5.5h-9z"/><path class="seta-baixo" d="M6 15l-4.5-5.5h9z"/></svg>
+                                    </button>
+                                </th>
+                                <th scope="col" class="col-status">Status</th>
+                                <th scope="col" class="col-acoes">Ações</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="listaLembretes"></tbody>
+                    </table>
+
+                    <!-- estados: vazio / erro (preenchido pelo JavaScript) -->
+                    <div id="estadoLista" class="estado" hidden></div>
+                </div>
+
+                <!-- PAGINAÇÃO -->
+                <nav class="paginacao" id="paginacao" aria-label="Paginação dos lembretes">
+                    <p id="resumoPaginacao" class="paginacao__resumo"></p>
+
+                    <div class="paginacao__paginas">
+                        <button id="btnAnterior" type="button" class="pagina pagina--seta" aria-label="Página anterior" disabled>
+                            <svg class="icone" aria-hidden="true"><use href="#i-esquerda"/></svg>
+                        </button>
+                        <ol id="listaPaginas" class="paginacao__lista"></ol>
+                        <button id="btnProximo" type="button" class="pagina pagina--seta" aria-label="Próxima página" disabled>
+                            <svg class="icone" aria-hidden="true"><use href="#i-direita"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="paginacao__tamanho">
+                        <label for="tamanhoPagina">Por página</label>
+                        <select id="tamanhoPagina">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                </nav>
+            </section>
+        </main>
+
+        <footer class="rodape">
+            <p>Atividade de Programação III (UMFG, 2026). HTML, CSS e JavaScript puro consumindo a Minimal API de lembretes.</p>
+        </footer>
+
+        <!-- FORMULÁRIO (bilhete) -->
+        <dialog id="formulario" class="bilhete" aria-labelledby="tituloFormulario">
+            <form id="formLembrete" class="bilhete__papel" novalidate>
+                <div class="bilhete__fita" aria-hidden="true"></div>
+
+                <h2 id="tituloFormulario">Novo lembrete</h2>
+
+                <input type="hidden" id="lembreteId">
+
+                <div class="campo">
+                    <label for="descricao">Descrição <span class="obrigatorio" aria-hidden="true">*</span></label>
+                    <textarea id="descricao" rows="4" maxlength="500" placeholder="O que você precisa lembrar?" required aria-describedby="erroDescricao dicaDescricao"></textarea>
+                    <div class="campo__rodape">
+                        <p id="erroDescricao" class="campo__erro" hidden></p>
+                        <p id="dicaDescricao" class="campo__dica"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> salva</p>
+                        <span id="contadorDescricao" class="contador" aria-live="off">0/500</span>
+                    </div>
+                </div>
+
+                <dl id="infoLembrete" class="bilhete__info" hidden></dl>
+
+                <div class="bilhete__acoes">
+                    <button type="button" id="btnCancelar" class="btn btn--texto">Cancelar</button>
+                    <button type="submit" id="btnSalvar" class="btn btn--primario">
+                        <svg class="icone" aria-hidden="true"><use href="#i-ok"/></svg>
+                        <span>Salvar lembrete</span>
+                    </button>
+                </div>
+            </form>
+        </dialog>
+
+        <!-- CONFIRMAÇÃO DE EXCLUSÃO -->
+        <dialog id="confirmacao" class="confirmacao" aria-labelledby="tituloConfirmacao" aria-describedby="textoConfirmacao">
+            <div class="confirmacao__papel">
+                <h2 id="tituloConfirmacao">Excluir este lembrete?</h2>
+                <blockquote id="textoConfirmacao" class="confirmacao__citacao"></blockquote>
+                <p class="confirmacao__aviso">Ele sai da lista e não aparece mais nas consultas.</p>
+
+                <div class="confirmacao__acoes">
+                    <button type="button" id="btnManter" class="btn btn--texto">Manter lembrete</button>
+                    <button type="button" id="btnConfirmarExclusao" class="btn btn--perigo">
+                        <svg class="icone" aria-hidden="true"><use href="#i-lixeira"/></svg>
+                        <span>Excluir lembrete</span>
+                    </button>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- AVISOS (toasts) -->
+        <div id="toasts" class="toasts"></div>
+
+        <script src="js/app.js"></script>
+    </body>
+</html>
