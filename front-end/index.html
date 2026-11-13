@@ -11,7 +11,7 @@
         <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='3' width='24' height='26' rx='3' fill='%231F3FA6'/%3E%3Cpath d='M9 11h14M9 16h14M9 21h9' stroke='%23FFE45E' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
         <link rel="stylesheet" href="css/style.css">
 
-        <!-- aplica o tema salvo antes de desenhar a página (evita "piscar" ao trocar de tema) -->
+
         <script>
             try {
                 var temaSalvo = localStorage.getItem("lembretes:tema");
@@ -24,7 +24,7 @@
     </head>
 
     <body>
-        <!-- ÍCONES (sprite SVG reutilizado com <use>) -->
+
         <svg class="sprite" aria-hidden="true" focusable="false">
             <symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
             <symbol id="i-baixar" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
@@ -45,7 +45,7 @@
 
         <a class="pular-link" href="#lista">Pular para a lista de lembretes</a>
 
-        <!-- CABEÇALHO -->
+
         <header class="topo">
             <div class="topo__titulo">
                 <h1>
@@ -74,12 +74,12 @@
             </div>
         </header>
 
-        <!-- FOLHA DO CADERNO -->
+
         <main class="folha" id="conteudo">
             <div class="folha__furos" aria-hidden="true"></div>
             <div class="barra-progresso" id="barraProgresso" hidden></div>
 
-            <!-- FILTROS -->
+
             <details class="filtros" id="detalhesFiltros" open>
                 <summary class="filtros__resumo">
                     <svg class="icone" aria-hidden="true"><use href="#i-funil"/></svg>
@@ -124,7 +124,7 @@
                 </form>
             </details>
 
-            <!-- LISTAGEM -->
+
             <section class="lista" id="lista" aria-labelledby="tituloLista" tabindex="-1">
                 <div class="lista__cabecalho">
                     <div>
@@ -166,11 +166,11 @@
                         <tbody id="listaLembretes"></tbody>
                     </table>
 
-                    <!-- estados: vazio / erro (preenchido pelo JavaScript) -->
+
                     <div id="estadoLista" class="estado" hidden></div>
                 </div>
 
-                <!-- PAGINAÇÃO -->
+
                 <nav class="paginacao" id="paginacao" aria-label="Paginação dos lembretes">
                     <p id="resumoPaginacao" class="paginacao__resumo"></p>
 
@@ -201,7 +201,7 @@
             <p>Atividade de Programação III (UMFG, 2026). HTML, CSS e JavaScript puro consumindo a Minimal API de lembretes.</p>
         </footer>
 
-        <!-- FORMULÁRIO (bilhete) -->
+
         <dialog id="formulario" class="bilhete" aria-labelledby="tituloFormulario">
             <form id="formLembrete" class="bilhete__papel" novalidate>
                 <div class="bilhete__fita" aria-hidden="true"></div>
@@ -232,7 +232,7 @@
             </form>
         </dialog>
 
-        <!-- CONFIRMAÇÃO DE EXCLUSÃO -->
+
         <dialog id="confirmacao" class="confirmacao" aria-labelledby="tituloConfirmacao" aria-describedby="textoConfirmacao">
             <div class="confirmacao__papel">
                 <h2 id="tituloConfirmacao">Excluir este lembrete?</h2>
@@ -249,7 +249,7 @@
             </div>
         </dialog>
 
-        <!-- AVISOS (toasts) -->
+
         <div id="toasts" class="toasts"></div>
 
         <script src="js/app.js"></script>

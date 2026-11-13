@@ -1,25 +1,25 @@
 "use strict";
 
-// =====================================================================
-// CONFIGURAÇÃO
-// =====================================================================
 
-// Endereço da API (perfil "https" do launchSettings.json).
-// Se a API for executada pelo perfil "http", troque para "http://localhost:5207".
+
+
+
+
+
 const API_URL = "https://localhost:7063";
 
-// Tempo máximo de espera por uma resposta da API
+
 const TEMPO_LIMITE_MS = 10000;
 
-// A API só ignora um filtro de data quando recebe um "valor neutro":
-//  - datas iniciais: DateTime.MinValue (0001-01-01) → a API não aplica o filtro
-//  - datas finais: uma data muito distante. A API soma 1 dia à data final para
-//    incluir o dia inteiro; com 9999-12-31 isso estouraria o DateTime, por isso 9999-12-30.
-// Assim, quando o usuário deixa uma data em branco, todos os registros continuam aparecendo.
+
+
+
+
+
 const DATA_INICIAL_NEUTRA = "0001-01-01";
 const DATA_FINAL_NEUTRA = "9999-12-30";
 
-// Campos aceitos pela API no parâmetro "Ordem" e a direção usada no primeiro clique
+
 const CAMPOS_ORDENACAO = {
     Descricao: { nome: "descrição", direcaoInicial: "ASC" },
     DataCadastro: { nome: "data de cadastro", direcaoInicial: "DESC" },
@@ -29,9 +29,9 @@ const CAMPOS_ORDENACAO = {
 const CHAVE_TEMA = "lembretes:tema";
 
 
-// =====================================================================
-// ESTADO DA TELA
-// =====================================================================
+
+
+
 
 const FILTROS_VAZIOS = Object.freeze({
     descricao: "",
@@ -44,19 +44,19 @@ const FILTROS_VAZIOS = Object.freeze({
 const estado = {
     numeroPagina: 1,
     tamanhoPagina: 10,
-    ordem: "DataCadastro",   // padrão da API
-    direcao: "DESC",         // padrão da API
+    ordem: "DataCadastro",
+    direcao: "DESC",
     filtros: { ...FILTROS_VAZIOS },
     total: 0,
-    idDestacado: null,       // linha que pisca depois de criar/editar
+    idDestacado: null,
     idParaExcluir: null,
-    consultaAtual: null      // AbortController da consulta em andamento
+    consultaAtual: null
 };
 
 
-// =====================================================================
-// ELEMENTOS DA PÁGINA
-// =====================================================================
+
+
+
 
 const $ = id => document.getElementById(id);
 
@@ -114,19 +114,19 @@ const elementos = {
 };
 
 
-// =====================================================================
-// COMUNICAÇÃO COM A API
-// Todas as requisições passam por chamarApi(): ela monta a URL, define
-// headers e corpo, aplica tempo limite, registra tudo no console (para a
-// Etapa 7) e transforma falhas em mensagens compreensíveis.
-// =====================================================================
+
+
+
+
+
+
 
 class ErroApi extends Error {
     constructor(mensagem, { tipo = "http", status = 0 } = {}) {
         super(mensagem);
         this.name = "ErroApi";
-        this.tipo = tipo;       // "http" | "rede" | "tempo" | "cancelada"
-        this.status = status;   // código HTTP (0 quando nem houve resposta)
+        this.tipo = tipo;
+        this.status = status;
     }
 }
 
@@ -148,7 +148,7 @@ async function chamarApi(caminho, { metodo = "GET", corpo, params, sinal, format
         opcoes.body = JSON.stringify(corpo);
     }
 
-    // AbortController: cancela por tempo limite ou quando outra consulta substitui esta
+
     const controlador = new AbortController();
     const temporizador = setTimeout(() => controlador.abort("tempo"), TEMPO_LIMITE_MS);
 
@@ -175,8 +175,8 @@ async function chamarApi(caminho, { metodo = "GET", corpo, params, sinal, format
             throw new ErroApi(`A API não respondeu em ${TEMPO_LIMITE_MS / 1000} segundos.`, { tipo: "tempo" });
         }
 
-        // fetch só lança erro (TypeError) quando não há resposta HTTP:
-        // API desligada, certificado HTTPS não aceito, bloqueio de CORS, sem rede...
+
+
         console.error(`[API] ${metodo} ${url.href} → falha de comunicação`, erro);
         throw new ErroApi(`Sem conexão com a API em ${API_URL}.`, { tipo: "rede" });
     }
@@ -218,7 +218,7 @@ async function lerCorpoResposta(response, formato) {
 }
 
 function mensagemPorStatus(status, corpo) {
-    // Results.BadRequest("texto") da API devolve o texto como JSON (string)
+
     const detalheApi = typeof corpo === "string" && corpo.length <= 160 && !corpo.trimStart().startsWith("<")
         ? ` ${corpo}`
         : "";
@@ -239,8 +239,8 @@ function mensagemPorStatus(status, corpo) {
     }
 }
 
-// Etapa 7: cada requisição aparece no console do navegador como um grupo
-// com método, URL, query string, headers, corpo enviado, status e resposta.
+
+
 function registrarNoConsole({ metodo, url, headers, corpo, response, corpoResposta, duracao }) {
     const cor = response.ok ? "#1C7C51" : "#C02F3D";
 
@@ -269,11 +269,11 @@ function registrarNoConsole({ metodo, url, headers, corpo, response, corpoRespos
 }
 
 
-// =====================================================================
-// OPERAÇÕES DA API
-// =====================================================================
 
-// GET /lembretes/filtro — consulta com filtros, paginação e ordenação
+
+
+
+
 async function carregarLembretes() {
     estado.consultaAtual?.abort();
 
@@ -292,7 +292,7 @@ async function carregarLembretes() {
         const total = Number(resultado?.total) || 0;
         const ultimaPagina = Math.max(1, Math.ceil(total / estado.tamanhoPagina));
 
-        // a página atual deixou de existir (ex.: excluiu o último item da última página)
+
         if (lembretes.length === 0 && total > 0 && estado.numeroPagina > ultimaPagina) {
             estado.numeroPagina = ultimaPagina;
             return carregarLembretes();
@@ -321,34 +321,34 @@ async function carregarLembretes() {
     }
 }
 
-// GET /lembretes/{id} — busca um lembrete para edição
+
 async function buscarLembrete(id) {
     return chamarApi(`/lembretes/${encodeURIComponent(id)}`);
 }
 
-// POST /lembretes — cadastra
+
 async function criarLembrete(descricao) {
     return chamarApi("/lembretes", { metodo: "POST", corpo: { descricao } });
 }
 
-// PUT /lembretes/{id} — atualiza a descrição
+
 async function atualizarLembrete(id, descricao) {
     return chamarApi(`/lembretes/${encodeURIComponent(id)}`, { metodo: "PUT", corpo: { descricao } });
 }
 
-// DELETE /lembretes/{id} — exclui (na API é exclusão lógica: IsAtivo = false)
+
 async function excluirLembrete(id) {
     return chamarApi(`/lembretes/${encodeURIComponent(id)}`, { metodo: "DELETE" });
 }
 
-// GET /lembretes/imprimir — baixa o PDF com os filtros e a ordenação atuais
+
 async function baixarPdf() {
     if (estado.total === 0) {
         mostrarToast("Não há lembretes para o relatório com os filtros atuais.", "aviso");
         return;
     }
 
-    // o relatório traz todos os lembretes filtrados (não só a página visível)
+
     const params = montarParametros({ numeroPagina: 1, tamanhoPagina: estado.total });
     const textoOriginal = definirTextoBotao(elementos.btnImprimir, "Gerando PDF…");
 
@@ -377,9 +377,9 @@ async function baixarPdf() {
 }
 
 
-// =====================================================================
-// PARÂMETROS DA CONSULTA (query string)
-// =====================================================================
+
+
+
 
 function montarParametros({ numeroPagina = estado.numeroPagina, tamanhoPagina = estado.tamanhoPagina } = {}) {
     const f = estado.filtros;
@@ -402,9 +402,9 @@ function temFiltrosAtivos() {
 }
 
 
-// =====================================================================
-// RENDERIZAÇÃO DA LISTA
-// =====================================================================
+
+
+
 
 function renderizarLembretes(lembretes) {
     elementos.listaLembretes.replaceChildren();
@@ -420,7 +420,7 @@ function renderizarLembretes(lembretes) {
     const linhas = lembretes.map(criarLinha);
     elementos.listaLembretes.append(...linhas);
 
-    // pisca a linha recém-criada/editada, se ela estiver na página atual
+
     if (estado.idDestacado) {
         const linha = linhas.find(tr => tr.dataset.id === estado.idDestacado);
         linha?.classList.add("destaque");
@@ -428,8 +428,8 @@ function renderizarLembretes(lembretes) {
     }
 }
 
-// Cria a linha com DOM (textContent), nunca com innerHTML: assim um lembrete
-// com "<script>" na descrição aparece como texto e não é executado (evita XSS).
+
+
 function criarLinha(lembrete) {
     const tr = document.createElement("tr");
     tr.dataset.id = lembrete.id;
@@ -673,7 +673,7 @@ function renderizarPaginacao() {
     });
 }
 
-// Ex.: atual = 6 de 12 → [1, "…", 5, 6, 7, "…", 12]
+
 function paginasVisiveis(atual, total) {
     if (total <= 7) {
         return Array.from({ length: total }, (_, i) => i + 1);
@@ -702,7 +702,7 @@ function definirCarregando(carregando) {
     elementos.tabela.setAttribute("aria-busy", String(carregando));
     elementos.listaLembretes.classList.toggle("carregando", carregando && elementos.listaLembretes.children.length > 0);
 
-    // primeira consulta: mostra linhas "fantasma" no lugar da tabela vazia
+
     if (carregando && elementos.listaLembretes.children.length === 0) {
         elementos.estadoLista.hidden = true;
         elementos.listaLembretes.append(...criarLinhasEsqueleto(Math.min(estado.tamanhoPagina, 5)));
@@ -728,9 +728,9 @@ function criarLinhasEsqueleto(quantidade) {
 }
 
 
-// =====================================================================
-// FILTROS
-// =====================================================================
+
+
+
 
 function lerFiltrosDoFormulario() {
     return {
@@ -795,7 +795,7 @@ function limparFiltros() {
     carregarLembretes();
 }
 
-// remove um único filtro clicando no "x" do chip
+
 function removerFiltro(chave) {
     const campos = {
         descricao: [elementos.filtroDescricao],
@@ -854,9 +854,9 @@ function renderizarChipsFiltros() {
 }
 
 
-// =====================================================================
-// FORMULÁRIO (cadastro e edição)
-// =====================================================================
+
+
+
 
 function abrirFormularioNovo() {
     elementos.formLembrete.reset();
@@ -965,7 +965,7 @@ async function salvarFormulario(event) {
             return;
         }
 
-        // o bilhete continua aberto para o texto digitado não se perder
+
         mostrarToast(`${id ? "Não foi possível atualizar" : "Não foi possível criar"} o lembrete. ${erro.message}`, "erro");
     } finally {
         definirSalvando(false);
@@ -1007,9 +1007,9 @@ function atualizarContador() {
 }
 
 
-// =====================================================================
-// EXCLUSÃO (com confirmação)
-// =====================================================================
+
+
+
 
 function pedirConfirmacaoExclusao(id) {
     const linha = elementos.listaLembretes.querySelector(`tr[data-id="${CSS.escape(id)}"]`);
@@ -1018,7 +1018,7 @@ function pedirConfirmacaoExclusao(id) {
     elementos.textoConfirmacao.textContent = linha?.querySelector(".descricao")?.textContent ?? "";
 
     elementos.confirmacao.showModal();
-    elementos.btnManter.focus(); // foco na opção segura
+    elementos.btnManter.focus();
 }
 
 async function confirmarExclusao() {
@@ -1053,9 +1053,9 @@ async function confirmarExclusao() {
 }
 
 
-// =====================================================================
-// AVISOS (toasts)
-// =====================================================================
+
+
+
 
 const ICONES_TOAST = { sucesso: "i-ok", erro: "i-alerta", aviso: "i-alerta", info: "i-info" };
 
@@ -1078,7 +1078,7 @@ function mostrarToast(mensagem, tipo = "info") {
     toast.append(criarIcone(ICONES_TOAST[tipo] ?? "i-info"), texto, fechar);
     elementos.toasts.append(toast);
 
-    // no máximo 4 avisos na tela
+
     while (elementos.toasts.children.length > 4) {
         elementos.toasts.firstElementChild.remove();
     }
@@ -1096,9 +1096,9 @@ function mostrarToast(mensagem, tipo = "info") {
 }
 
 
-// =====================================================================
-// TEMA (caderno / lousa)
-// =====================================================================
+
+
+
 
 function aplicarTema(tema, salvar = false) {
     document.documentElement.dataset.tema = tema;
@@ -1114,18 +1114,18 @@ function aplicarTema(tema, salvar = false) {
     try {
         localStorage.setItem(CHAVE_TEMA, tema);
     } catch {
-        // navegação privada ou armazenamento bloqueado: o tema só não fica salvo
+
     }
 }
 
 
-// =====================================================================
-// UTILITÁRIOS
-// =====================================================================
 
-// A API devolve datas sem fuso (ex.: "2026-11-11T20:23:05.1234567"), que o
-// JavaScript interpreta como horário local. Os dígitos além dos milissegundos
-// são cortados porque nem todo navegador aceita mais de 3 casas decimais.
+
+
+
+
+
+
 function converterData(valor) {
     if (!valor) {
         return null;
@@ -1143,7 +1143,7 @@ function formatarData(data) {
     return data ? `${formatoDia.format(data)} às ${formatoHora.format(data)}` : "—";
 }
 
-// "2026-11-05" → "05/11/2026" (sem passar por Date, para não sofrer com fuso)
+
 function formatarDiaIso(valor) {
     const [ano, mes, dia] = valor.split("-");
     return `${dia}/${mes}/${ano}`;
@@ -1181,8 +1181,8 @@ function definirTextoBotao(botao, texto) {
     return anterior;
 }
 
-// Grifa o termo pesquisado ignorando maiúsculas e acentos, como o LIKE do
-// MySQL faz ("reuniao" encontra "Reunião"). Devolve nós de texto + <mark>.
+
+
 function destacarTermo(texto, termo) {
     const fragmento = document.createDocumentFragment();
 
@@ -1193,7 +1193,7 @@ function destacarTermo(texto, termo) {
 
     const normalizar = valor => valor.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
-    // texto normalizado + mapa de cada caractere normalizado para a posição original
+
     let normalizado = "";
     const posicoes = [];
 
@@ -1227,9 +1227,9 @@ function destacarTermo(texto, termo) {
 }
 
 
-// =====================================================================
-// EVENTOS
-// =====================================================================
+
+
+
 
 elementos.btnNovo.addEventListener("click", abrirFormularioNovo);
 elementos.btnImprimir.addEventListener("click", baixarPdf);
@@ -1244,7 +1244,7 @@ elementos.descricao.addEventListener("input", () => {
     }
 });
 
-// Ctrl + Enter (ou Cmd + Enter no Mac) salva o bilhete
+
 elementos.descricao.addEventListener("keydown", event => {
     if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
@@ -1252,14 +1252,14 @@ elementos.descricao.addEventListener("keydown", event => {
     }
 });
 
-// Esc fecha o bilhete, exceto enquanto está salvando
+
 elementos.formulario.addEventListener("cancel", event => {
     if (elementos.formulario.dataset.salvando === "true") {
         event.preventDefault();
     }
 });
 
-// clique fora do papel (no fundo escurecido) fecha os diálogos
+
 [elementos.formulario, elementos.confirmacao].forEach(dialogo => {
     dialogo.addEventListener("click", event => {
         if (event.target === dialogo && dialogo.dataset.salvando !== "true" && !elementos.btnConfirmarExclusao.disabled) {
@@ -1268,7 +1268,7 @@ elementos.formulario.addEventListener("cancel", event => {
     });
 });
 
-// ações das linhas (delegação de eventos: um único listener para a tabela toda)
+
 elementos.listaLembretes.addEventListener("click", event => {
     const botao = event.target.closest("button[data-acao]");
 
@@ -1287,7 +1287,7 @@ elementos.btnManter.addEventListener("click", () => elementos.confirmacao.close(
 elementos.btnConfirmarExclusao.addEventListener("click", confirmarExclusao);
 elementos.confirmacao.addEventListener("close", () => { estado.idParaExcluir = null; });
 
-// filtros: Enter em qualquer campo ou o botão "Filtrar" enviam o formulário
+
 elementos.formFiltros.addEventListener("submit", event => {
     event.preventDefault();
     aplicarFiltros();
@@ -1295,13 +1295,13 @@ elementos.formFiltros.addEventListener("submit", event => {
 
 elementos.btnLimparFiltros.addEventListener("click", limparFiltros);
 
-// valida o período enquanto o usuário escolhe as datas
+
 [elementos.filtroCadastroInicial, elementos.filtroCadastroFinal,
     elementos.filtroAtualizacaoInicial, elementos.filtroAtualizacaoFinal].forEach(campo => {
         campo.addEventListener("change", validarFiltros);
     });
 
-// ordenação: clique no título da coluna
+
 elementos.cabecalhoTabela.addEventListener("click", event => {
     const botao = event.target.closest("button.ordenar");
 
@@ -1324,7 +1324,7 @@ elementos.cabecalhoTabela.addEventListener("click", event => {
     carregarLembretes();
 });
 
-// paginação
+
 function irParaPagina(pagina) {
     if (pagina === estado.numeroPagina) {
         return;
@@ -1333,7 +1333,7 @@ function irParaPagina(pagina) {
     estado.numeroPagina = pagina;
     carregarLembretes();
 
-    // em telas pequenas, volta para o início da lista
+
     if (elementos.lista.getBoundingClientRect().top < 0) {
         elementos.lista.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -1361,9 +1361,9 @@ elementos.btnTema.addEventListener("click", () => {
 });
 
 
-// =====================================================================
-// INICIALIZAÇÃO
-// =====================================================================
+
+
+
 
 function iniciar() {
     const hoje = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
@@ -1376,7 +1376,7 @@ function iniciar() {
 
     estado.tamanhoPagina = Number(elementos.tamanhoPagina.value);
 
-    // no celular os filtros começam recolhidos para a lista aparecer primeiro
+
     if (window.matchMedia("(max-width: 760px)").matches) {
         elementos.detalhesFiltros.open = false;
     }
